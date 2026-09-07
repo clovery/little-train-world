@@ -1,8 +1,68 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import Phaser from 'phaser';
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  Check,
+  ChevronDown,
+  DoorOpen,
+  Hand,
+  Map as MapIcon,
+  Megaphone,
+  MessageCircle,
+  Minus,
+  Moon,
+  Music2,
+  PartyPopper,
+  Play,
+  Plus,
+  Puzzle,
+  Shuffle,
+  Sun,
+  TrainFront,
+  Undo2,
+  Volume2,
+  VolumeX,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { asset, biomes, journeys, trains, type BiomeId, type TrainId } from './data/catalog';
 import { TrainAudio } from './game/audio';
 import { TrainScene, type SceneSnapshot } from './game/TrainScene';
+
+const ICONS = {
+  wave: Hand,
+  chat: MessageCircle,
+  horn: Megaphone,
+  celebrate: PartyPopper,
+  train: TrainFront,
+  route: MapIcon,
+  moon: Moon,
+  sun: Sun,
+  soundOn: Volume2,
+  soundOff: VolumeX,
+  replay: Music2,
+  puzzle: Puzzle,
+  door: DoorOpen,
+  go: ArrowUp,
+  again: Play,
+  brake: ArrowDown,
+  close: X,
+  check: Check,
+  arrow: ArrowRight,
+  chevron: ChevronDown,
+  plus: Plus,
+  minus: Minus,
+  undo: Undo2,
+  shuffle: Shuffle,
+} satisfies Record<string, LucideIcon>;
+type IconKey = keyof typeof ICONS;
+
+function Icon({ name, size = 20, strokeWidth = 2, className }: { name: IconKey; size?: number; strokeWidth?: number; className?: string }) {
+  const Component = ICONS[name];
+  return <Component size={size} strokeWidth={strokeWidth} aria-hidden="true" focusable="false" className={className} />;
+}
 
 const initialSnapshot: SceneSnapshot = {
   moving: false,
@@ -42,9 +102,9 @@ export function App() {
   const [snapshot, setSnapshot] = useState<SceneSnapshot>(initialSnapshot);
   const [night, setNight] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [speech, setSpeech] = useState({ icon: '👋', text: '选一辆火车，一起去看看吧！' });
+  const [speech, setSpeech] = useState<{ icon: IconKey; text: string }>({ icon: 'wave', text: '选一辆火车，一起去看看吧！' });
 
-  function say(text: string, icon = '💬'): void {
+  function say(text: string, icon: IconKey = 'chat'): void {
     setSpeech({ text, icon });
     audioRef.current.speak(text);
   }
@@ -54,7 +114,7 @@ export function App() {
     audioRef.current.horn(selectedTrainRef.current);
     sceneRef.current?.honk();
     setSpeech({
-      icon: '📣',
+      icon: 'horn',
       text: selectedTrainRef.current === 'steam' ? '呜——小火车来啦！' : '嘀——火车来啦！',
     });
   };
@@ -80,13 +140,13 @@ export function App() {
 
         if (lastBiomeRef.current !== state.biome) {
           lastBiomeRef.current = state.biome;
-          say(biomes[state.biome].fact, biomes[state.biome].icon);
+          say(biomes[state.biome].fact, 'route');
         }
         if (previous.chunkIndex !== state.chunkIndex) {
           setCurrentStops([...currentStopsRef.current]);
         }
         if (state.arrived && !lastArrivedRef.current) {
-          say('到站啦！小小驾驶员，开得真棒！', '🎉');
+          say('到站啦！小小驾驶员，开得真棒！', 'celebrate');
           audioRef.current.tone(523, .2);
           audioRef.current.tone(659, .2, .2);
           audioRef.current.tone(784, .4, .4);
@@ -155,7 +215,7 @@ export function App() {
     sceneRef.current?.selectTrain(id);
 
     const train = trains.find((item) => item.id === id);
-    if (train) say(`这是${train.name}。${train.fact}`, '🚂');
+    if (train) say(`这是${train.name}。${train.fact}`, 'train');
     window.setTimeout(() => garageDialogRef.current?.close(), 180);
   }
 
@@ -168,23 +228,23 @@ export function App() {
     setCurrentRoute(name);
     setActiveJourneyId(id);
     sceneRef.current?.setRoute(nextStops);
-    say(`下一趟，${name}！准备好就出发吧。`, '🗺️');
+    say(`下一趟，${name}！准备好就出发吧。`, 'route');
   }
 
   function handleGo(): void {
     audioRef.current.enableEngine();
     sceneRef.current?.accelerate();
-    say(snapshotRef.current.arrived ? '再开一趟，看看熟悉的风景！' : '加速啦，坐坐稳！', '🚂');
+    say(snapshotRef.current.arrived ? '再开一趟，看看熟悉的风景！' : '加速啦，坐坐稳！', 'train');
   }
 
   function handleBrake(): void {
     sceneRef.current?.brake();
-    say('慢慢刹车，准备停稳。', '🛑');
+    say('慢慢刹车，准备停稳。', 'brake');
   }
 
   function handleAgain(): void {
     sceneRef.current?.restart();
-    say('再开一趟，看看熟悉的风景！', '🚂');
+    say('再开一趟，看看熟悉的风景！', 'train');
   }
 
   function handleDay(): void {
@@ -192,7 +252,7 @@ export function App() {
     nightRef.current = nextNight;
     setNight(nextNight);
     sceneRef.current?.setNight(nextNight);
-    say(nextNight ? '天黑啦，打开车灯继续旅行。' : '太阳出来啦，看看美丽的风景。', nextNight ? '🌙' : '☀️');
+    say(nextNight ? '天黑啦，打开车灯继续旅行。' : '太阳出来啦，看看美丽的风景。', nextNight ? 'moon' : 'sun');
   }
 
   function handleSound(): void {
@@ -220,14 +280,14 @@ export function App() {
     if (customStops.length >= 8) return;
     const nextStops = [...customStops, id];
     setCustomStops(nextStops);
-    setSpeech({ icon: speech.icon, text: `加上了${biomes[id].name}。` });
+    setSpeech((prev) => ({ icon: prev.icon, text: `加上了${biomes[id].name}。` }));
     audioRef.current.tone(500 + nextStops.length * 40, .12);
   }
 
   function undoBiome(): void {
     const nextStops = customStops.slice(0, -1);
     setCustomStops(nextStops);
-    if (nextStops.length < 2) setSpeech({ icon: speech.icon, text: '至少拼上两段风景，就能出发。' });
+    if (nextStops.length < 2) setSpeech((prev) => ({ icon: prev.icon, text: '至少拼上两段风景，就能出发。' }));
   }
 
   function shuffleBiomes(): void {
@@ -266,11 +326,11 @@ export function App() {
             aria-label={night ? '切换到白天' : '切换到夜晚'}
             onClick={handleDay}
           >
-            <span id="day-icon" aria-hidden="true">{night ? '🌙' : '☀️'}</span>
+            <Icon name={night ? 'moon' : 'sun'} size={20} />
             <span id="day-label">{night ? '夜晚' : '白天'}</span>
           </button>
           <button id="sound" className="tool-button sound-button" aria-label={muted ? '开启声音' : '关闭声音'} aria-pressed={muted} onClick={handleSound}>
-            {muted ? '🔇' : '🔊'}
+            <Icon name={muted ? 'soundOff' : 'soundOn'} size={20} />
           </button>
         </div>
       </header>
@@ -290,28 +350,39 @@ export function App() {
             </div>
 
             <div className="speech">
-              <span id="speech-icon" aria-hidden="true">{speech.icon}</span>
+              <Icon name={speech.icon} size={24} className="speech-icon" />
               <span id="speech-text" role="status" aria-live="polite">{speech.text}</span>
-              <button id="replay" aria-label="再听一次" onClick={() => audioRef.current.speak(speech.text)}>♬</button>
+              <button id="replay" aria-label="再听一次" onClick={() => audioRef.current.speak(speech.text)}>
+                <Icon name="replay" size={18} />
+              </button>
             </div>
 
             <div className="stage-actions" aria-label="游戏选择">
               <button id="open-garage" className="stage-action" disabled={!ready} onClick={() => { pauseForPicker(); openDialog(garageDialogRef.current); }}>
-                <span aria-hidden="true">🚂</span><span><small>现在驾驶</small><strong id="current-train">{train.name}</strong></span><b aria-hidden="true">⌄</b>
+                <Icon name="train" size={22} />
+                <span><small>现在驾驶</small><strong id="current-train">{train.name}</strong></span>
+                <Icon name="chevron" size={16} className="stage-action-caret" />
               </button>
               <button id="open-routes" className="stage-action" disabled={!ready} onClick={() => { pauseForPicker(); openDialog(routesDialogRef.current); }}>
-                <span aria-hidden="true">🗺️</span><span><small>旅行路线</small><strong id="current-route">{currentRoute}</strong></span><b aria-hidden="true">⌄</b>
+                <Icon name="route" size={22} />
+                <span><small>旅行路线</small><strong id="current-route">{currentRoute}</strong></span>
+                <Icon name="chevron" size={16} className="stage-action-caret" />
               </button>
             </div>
 
-            <div id="door-note" className="door-note" hidden={!snapshot.doorsOpen}>🚪 车门打开啦</div>
+            <div id="door-note" className="door-note" hidden={!snapshot.doorsOpen}>
+              <Icon name="door" size={18} /> 车门打开啦
+            </div>
             <div id="loading" className="overlay" hidden={ready && !loadFailed}>
-              <span className="loading-icon">🚂</span><strong>小火车准备中…</strong>
+              <Icon name="train" size={48} className="loading-icon" />
+              <strong>小火车准备中…</strong>
               <p id="loading-text">{loadFailed ? '有一张图片没有装好，再试一次吧。' : '把风景和车厢装好，就出发。'}</p>
               <button id="reload" hidden={!loadFailed} onClick={() => location.reload()}>重新打开</button>
             </div>
             <div id="arrival" className="overlay arrival" hidden={!snapshot.arrived}>
-              <span>🎉</span><strong>到站啦！</strong><p>这一趟，发现了好多新风景。</p>
+              <Icon name="celebrate" size={48} />
+              <strong>到站啦！</strong>
+              <p>这一趟，发现了好多新风景。</p>
               <button id="again" onClick={handleAgain}>再开一趟 →</button>
             </div>
           </div>
@@ -325,15 +396,16 @@ export function App() {
           <div className="controls">
             <div className="control-cluster">
               <button id="horn" className="control big-control" disabled={!ready} onClick={() => hornRef.current()}>
-                <span className="control-icon horn" aria-hidden="true">📣</span><span>鸣笛</span>
+                <span className="control-icon horn"><Icon name="horn" size={26} strokeWidth={2.2} /></span><span>鸣笛</span>
               </button>
             </div>
             <button id="go" className={`go ${snapshot.speed > 20 ? 'moving' : ''}`} disabled={!ready} onClick={handleGo}>
-              <span id="go-icon" aria-hidden="true">{snapshot.arrived ? '▶' : '▲'}</span><span id="go-label">{snapshot.arrived ? '再出发' : '加速'}</span>
+              <Icon name={snapshot.arrived ? 'again' : 'go'} size={22} />
+              <span id="go-label">{snapshot.arrived ? '再出发' : '加速'}</span>
             </button>
             <div className="control-cluster control-cluster-end">
               <button id="brake" className="control big-control brake-button" disabled={!ready} onClick={handleBrake}>
-                <span className="control-icon brake" aria-hidden="true">▼</span><span>刹车</span>
+                <span className="control-icon brake"><Icon name="brake" size={26} strokeWidth={2.4} /></span><span>刹车</span>
               </button>
             </div>
           </div>
@@ -346,7 +418,9 @@ export function App() {
           <div className="sheet-handle" aria-hidden="true" />
           <div className="sheet-head">
             <div><span className="eyebrow">选择今天的小火车</span><h2 id="garage-title">我的火车车库</h2></div>
-            <button id="close-garage" className="round-button" aria-label="关闭火车车库" onClick={() => garageDialogRef.current?.close()}>✕</button>
+            <button id="close-garage" className="round-button" aria-label="关闭火车车库" onClick={() => garageDialogRef.current?.close()}>
+              <Icon name="close" size={18} />
+            </button>
           </div>
           <div className="train-choices">
             {trains.map((item) => {
@@ -354,7 +428,7 @@ export function App() {
               return (
                 <button key={item.id} className={`choice ${active ? 'selected' : ''}`} disabled={!ready} aria-pressed={active} onClick={() => chooseTrain(item.id)}>
                   <div className="choice-art"><img src={asset(`${item.id}.png`)} alt={item.name} draggable="false" /></div>
-                  <div className="choice-info"><span><strong>{item.name}</strong><small>{item.note}</small></span><span className="choice-check" aria-hidden="true">✓</span></div>
+                  <div className="choice-info"><span><strong>{item.name}</strong><small>{item.note}</small></span><span className="choice-check"><Icon name="check" size={12} strokeWidth={3} /></span></div>
                 </button>
               );
             })}
@@ -367,7 +441,9 @@ export function App() {
           <div className="sheet-handle" aria-hidden="true" />
           <div className="sheet-head">
             <div><span className="eyebrow">下一趟想去哪里</span><h2 id="routes-title">选择旅行路线</h2></div>
-            <button id="close-routes" className="round-button" aria-label="关闭路线选择" onClick={() => routesDialogRef.current?.close()}>✕</button>
+            <button id="close-routes" className="round-button" aria-label="关闭路线选择" onClick={() => routesDialogRef.current?.close()}>
+              <Icon name="close" size={18} />
+            </button>
           </div>
           <div className="journey-choices">
             {journeys.map((journey) => {
@@ -376,13 +452,15 @@ export function App() {
                 <button key={journey.id} className={`journey-choice ${active ? 'selected' : ''}`} disabled={!ready} aria-pressed={active} onClick={() => { chooseRoute(journey.stops, journey.name, journey.id); routesDialogRef.current?.close(); }}>
                   <span className="journey-icon" aria-hidden="true">{journey.icon}</span>
                   <span><strong>{journey.name}</strong><small>{journey.stops.length} 段风景 · 一路慢慢看</small></span>
-                  <span className="journey-arrow" aria-hidden="true">→</span>
+                  <span className="journey-arrow"><Icon name="arrow" size={18} /></span>
                 </button>
               );
             })}
           </div>
           <button id="open-builder" className="build-route" disabled={!ready} onClick={() => { sceneRef.current?.stopImmediately(); audioRef.current.stopSpeech(); routesDialogRef.current?.close(); openDialog(builderDialogRef.current); }}>
-            <span aria-hidden="true">🧩</span><span><strong>自己拼一条路线</strong><small>把喜欢的风景连起来</small></span><span aria-hidden="true">＋</span>
+            <Icon name="puzzle" size={26} />
+            <span><strong>自己拼一条路线</strong><small>把喜欢的风景连起来</small></span>
+            <Icon name="plus" size={20} className="build-route-plus" />
           </button>
         </div>
       </dialog>
@@ -390,13 +468,16 @@ export function App() {
       <dialog ref={builderDialogRef} id="builder" className="builder-dialog" aria-labelledby="builder-title" onClick={handleBuilderBackdropClick}>
         <div className="dialog-head">
           <div><span className="eyebrow">一块接一块，去喜欢的地方</span><h2 id="builder-title">拼出你的小旅程</h2></div>
-          <button id="close-builder" className="round-button" aria-label="关闭路线拼接" onClick={() => builderDialogRef.current?.close()}>✕</button>
+          <button id="close-builder" className="round-button" aria-label="关闭路线拼接" onClick={() => builderDialogRef.current?.close()}>
+            <Icon name="close" size={18} />
+          </button>
         </div>
         <p className="builder-hint">点一下风景，就能加一段。最多 8 段。</p>
         <div className="terrain-choices">
           {Object.entries(biomes).map(([id, biome]) => (
             <button key={id} disabled={customStops.length >= 8} onClick={() => addBiome(id as BiomeId)}>
-              <img src={asset(`biome-${id}.webp`)} alt="" /><span>{biome.icon} {biome.name}</span><b aria-hidden="true">＋</b>
+              <img src={asset(`biome-${id}.webp`)} alt="" /><span>{biome.icon} {biome.name}</span>
+              <b className="terrain-choices-plus"><Icon name="plus" size={16} /></b>
             </button>
           ))}
         </div>
@@ -406,12 +487,12 @@ export function App() {
           ))}
         </div>
         <div className="builder-tools">
-          <button id="undo" disabled={customStops.length === 0} onClick={undoBiome}>↶ 退一步</button>
-          <button id="shuffle" onClick={shuffleBiomes}>⤨ 换个顺序</button>
+          <button id="undo" disabled={customStops.length === 0} onClick={undoBiome}><Icon name="undo" size={16} /> 退一步</button>
+          <button id="shuffle" onClick={shuffleBiomes}><Icon name="shuffle" size={16} /> 换个顺序</button>
           <span id="builder-count">{customStops.length} / 8 段</span>
         </div>
         <p id="builder-status" role="status" className="builder-status">{speech.text.startsWith('加上了') || speech.text.startsWith('至少拼上') ? speech.text : ''}</p>
-        <button id="apply-route" className="apply-route" disabled={customStops.length < 2} onClick={() => { chooseRoute(customStops, '我的小旅程'); builderDialogRef.current?.close(); }}>就走这条路 →</button>
+        <button id="apply-route" className="apply-route" disabled={customStops.length < 2} onClick={() => { chooseRoute(customStops, '我的小旅程'); builderDialogRef.current?.close(); }}>就走这条路 <Icon name="arrow" size={18} /></button>
       </dialog>
     </>
   );
@@ -423,7 +504,7 @@ function FragmentStop({ id, index, active, last }: { id: BiomeId; index: number;
       <span className={`stop ${active ? 'active' : ''}`} aria-current={active ? 'step' : undefined}>
         <span>{biomes[id].icon}</span><span>{biomes[id].name}</span>
       </span>
-      {!last && <i aria-hidden="true">···</i>}
+      {!last && <i className="ribbon-divider" aria-hidden="true"><Icon name="minus" size={14} /><Icon name="minus" size={14} /><Icon name="minus" size={14} /></i>}
     </>
   );
 }
@@ -432,7 +513,7 @@ function FragmentBuilderStop({ id, index, last }: { id: BiomeId; index: number; 
   return (
     <>
       <span><b>{biomes[id].icon}</b><small>{index + 1}. {biomes[id].name}</small></span>
-      {!last && <i>→</i>}
+      {!last && <i className="ribbon-divider"><Icon name="arrow" size={16} /></i>}
     </>
   );
 }

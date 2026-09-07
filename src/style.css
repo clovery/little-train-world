@@ -121,10 +121,11 @@
     box-shadow: 0 5px 18px #324a3c0d;
   }
   .round-button {
-    @apply w-11 h-11 rounded-full text-[18px] flex-none;
+    @apply w-11 h-11 rounded-full flex-none grid place-items-center;
     border: 1px solid #dfe6d8;
     background: #fffdf7e8;
     box-shadow: 0 5px 18px #324a3c0d;
+    color: var(--color-ink);
   }
   .sound-button {
     @apply w-11 p-0 justify-center text-[20px];
@@ -216,15 +217,23 @@
     border-top-color: #fffef4ed;
   }
   #speech-icon {
-    @apply text-[24px] flex-none;
+    @apply flex-none;
+    color: var(--color-orange-dark);
+  }
+  .speech-icon {
+    @apply flex-none;
+    color: var(--color-orange-dark);
   }
   #speech-text {
     @apply min-w-0;
   }
   #replay {
-    @apply w-[34px] h-[34px] ml-auto rounded-full text-[21px] flex-none;
+    @apply w-[34px] h-[34px] ml-auto rounded-full flex-none grid place-items-center;
     background: #e8efdc;
     color: #526e50;
+  }
+  #replay svg {
+    @apply stroke-[2.2];
   }
 
   /* 阶段动作 */
@@ -239,9 +248,11 @@
     backdrop-filter: blur(10px);
     pointer-events: auto;
   }
-  .stage-action > span:first-child {
-    @apply w-[38px] h-[38px] grid place-items-center rounded-[13px] text-[23px];
+  .stage-action > span:first-child,
+  .stage-action > svg {
+    @apply w-[38px] h-[38px] grid place-items-center rounded-[13px] flex-none p-2;
     background: #f2ead4;
+    color: var(--color-orange-dark);
   }
   .stage-action span:nth-child(2) {
     @apply min-w-0;
@@ -256,15 +267,17 @@
   .stage-action strong {
     @apply overflow-hidden text-ellipsis whitespace-nowrap text-[14px];
   }
-  .stage-action b {
-    @apply ml-auto text-[#7a8b7c] text-[18px];
+  .stage-action b,
+  .stage-action-caret {
+    @apply ml-auto text-[#7a8b7c];
   }
 
   /* 车门提示 */
   .door-note {
-    @apply absolute z-2 left-[30%] bottom-[30%] py-2 px-3 rounded-[14px] text-[14px] font-extrabold;
+    @apply absolute z-2 left-[30%] bottom-[30%] py-2 px-3 rounded-[14px] text-[14px] font-extrabold inline-flex items-center gap-1.5;
     background: #fff4c9e8;
     box-shadow: 0 8px 20px #664b1617;
+    color: #7a5b14;
   }
 
   /* 浮层 */
@@ -273,8 +286,10 @@
     background: #fbfbefe8;
     backdrop-filter: blur(8px);
   }
-  .overlay > span {
-    @apply text-[52px];
+  .overlay > span,
+  .overlay > svg {
+    @apply mb-1;
+    color: var(--color-orange);
   }
   .overlay strong {
     @apply mt-2.5 mb-0.5 text-[30px];
@@ -283,7 +298,7 @@
     @apply my-2 text-[#6d816b] text-[16px];
   }
   .overlay button {
-    @apply py-[15px] px-[25px] rounded-[18px] bg-orange text-white text-[19px] font-extrabold;
+    @apply py-[15px] px-[25px] rounded-[18px] bg-orange text-white text-[19px] font-extrabold inline-flex items-center gap-2;
   }
   .loading-icon {
     animation: var(--animate-ready);
@@ -305,8 +320,9 @@
   .stop.active {
     @apply bg-[#e4efd9] text-[#365d44] font-extrabold;
   }
-  .route-ribbon > i {
-    @apply text-[#afbaa9] not-italic tracking-[0.15em];
+  .route-ribbon > i,
+  .ribbon-divider {
+    @apply text-[#afbaa9] not-italic tracking-[0.15em] flex items-center gap-0.5;
   }
 
   /* 控制台 */
@@ -354,8 +370,9 @@
     background: linear-gradient(180deg, #ef8253, #dc6439);
     box-shadow: 0 6px 0 var(--color-orange-dark), 0 12px 25px #c45b3822;
   }
-  .go > span:first-child {
-    @apply text-[21px];
+  .go > span:first-child,
+  .go > svg {
+    @apply stroke-[2.4];
   }
   .go.moving {
     background: linear-gradient(180deg, #6e996d, #507b59);
@@ -474,7 +491,7 @@
     @apply mt-1 text-[#7b897d] text-[12px];
   }
   .journey-arrow {
-    @apply ml-auto text-[#728676] text-[19px];
+    @apply ml-auto text-[#728676] flex items-center;
   }
   .build-route {
     @apply w-full mt-[11px];
@@ -482,11 +499,15 @@
     border-color: #c7b88d;
     background: #f6eedb;
   }
-  .build-route > span:first-child {
-    @apply w-[42px] text-[27px];
+  .build-route > span:first-child,
+  .build-route > svg {
+    @apply w-[42px] flex-none;
+    color: var(--color-orange-dark);
   }
-  .build-route > span:last-child {
-    @apply ml-auto text-[24px];
+  .build-route > span:last-child,
+  .build-route-plus {
+    @apply ml-auto;
+    color: var(--color-orange-dark);
   }
 
   .builder-dialog {
@@ -512,9 +533,11 @@
   .terrain-choices img {
     @apply w-full h-[74px] mb-2 block object-cover;
   }
-  .terrain-choices b {
-    @apply absolute top-[7px] right-[7px] w-6 h-6 grid place-items-center rounded-full text-[18px];
+  .terrain-choices b,
+  .terrain-choices-plus {
+    @apply absolute top-[7px] right-[7px] w-6 h-6 grid place-items-center rounded-full;
     background: #fffdf2e8;
+    color: var(--color-orange-dark);
   }
   .builder-route {
     @apply min-h-[98px] p-4 flex items-center gap-2.5 flex-wrap rounded-[18px];
@@ -536,8 +559,11 @@
     @apply mt-[13px] flex items-center gap-2;
   }
   .builder-tools button {
-    @apply py-2.5 px-3 rounded-xl text-[13px];
+    @apply py-2.5 px-3 rounded-xl text-[13px] inline-flex items-center gap-1.5;
     background: #e9ece3;
+  }
+  .builder-tools button svg {
+    @apply stroke-[2.2];
   }
   .builder-tools > span {
     @apply ml-auto text-[#7c897d] text-[13px];
@@ -546,7 +572,10 @@
     @apply min-h-[21px] text-[#66815f] text-[13px];
   }
   .apply-route {
-    @apply w-full min-h-[56px] rounded-[18px] bg-orange text-white text-[19px] font-black;
+    @apply w-full min-h-[56px] rounded-[18px] bg-orange text-white text-[19px] font-black inline-flex items-center justify-center gap-2;
+  }
+  .apply-route svg {
+    @apply stroke-[2.4];
   }
   .apply-route:disabled {
     @apply bg-[#b3b6a8];
