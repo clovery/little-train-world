@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { asset, biomes, trains, type BiomeId, type TrainId } from '../data/catalog';
 import { brakingSpeed, stepMotion } from './motion';
 import { CHUNK_LENGTH, OVERLAP, createRoute, sampleTerrain, visibleChunks, type RouteChunk } from './route';
+import { wheelLayouts, type WheelSpec } from './wheelLayouts';
 
 export interface SceneSnapshot {
   moving: boolean;
@@ -105,9 +106,9 @@ export class TrainScene extends Phaser.Scene {
     this.wheels.forEach(w=>w.destroy());this.wheels=[];
     this.doorImage?.destroy();this.doorImage=undefined;this.doorBack?.destroy();this.doorBack=undefined;
     this.body.setTexture(this.trainType);
-    if(this.trainType==='steam'){
-      for(let i=0;i<3;i++){const wheel=this.add.image(0,0,`wheel-${i}`);this.wheels.push(wheel);this.train.add(wheel);}
-    }
+    wheelLayouts[this.trainType].forEach((spec,index)=>{
+      const wheel=this.add.image(0,0,this.wheelTexture(spec,index));this.wheels.push(wheel);this.train.add(wheel);
+    });
     if(trains.find(t=>t.id===this.trainType)?.door){
       this.doorBack=this.add.rectangle(0,0,1,1,0x263a32).setOrigin(0);
       this.doorImage=this.add.image(0,0,`door-${this.trainType}`).setOrigin(0);
@@ -121,9 +122,22 @@ export class TrainScene extends Phaser.Scene {
     this.trainWidth=Math.min(w*.88,840,h*1.85);
     this.trainHeight=this.trainWidth*img.height/img.width;
     this.body.setPosition(-this.trainWidth/2,-this.trainHeight).setDisplaySize(this.trainWidth,this.trainHeight);
-    const wheelSpecs=[{x:979/1421,y:224/271,r:43/1421},{x:1085/1421,y:224/271,r:43/1421},{x:1189/1421,y:227/271,r:40/1421}];
-    this.wheels.forEach((wheel,i)=>{const c=wheelSpecs[i];wheel.setPosition((c.x-.5)*this.trainWidth,(c.y-1)*this.trainHeight).setDisplaySize(c.r*2*this.trainWidth,c.r*2*this.trainWidth);});
+    const wheelSpecs=wheelLayouts[this.trainType];
+    this.wheels.forEach((wheel,i)=>{const c=wheelSpecs[i];wheel.setPosition((c.x-.5)*this.trainWidth,(c.y-1)*this.trainHeight).setDisplaySize(c.radius*2*this.trainWidth,c.radius*2*this.trainWidth);});
     this.layoutDoor();
+  }
+  private wheelTexture(spec:WheelSpec,index:number):string {
+    if(spec.texture)return spec.texture;
+    const key=`wheel-${this.trainType}-crop-${index}`;
+    if(this.textures.exists(key))return key;
+    const source=this.textures.get(this.trainType).getSourceImage() as HTMLImageElement;
+    const diameter=Math.max(8,Math.round(spec.radius*source.width*2));
+    const texture=this.textures.createCanvas(key,diameter,diameter)!;
+    const context=texture.context;
+    context.save();context.beginPath();context.arc(diameter/2,diameter/2,diameter/2-.5,0,Math.PI*2);context.clip();
+    context.drawImage(source,spec.x*source.width-diameter/2,spec.y*source.height-diameter/2,diameter,diameter,0,0,diameter,diameter);
+    context.restore();texture.refresh();
+    return key;
   }
   private layoutDoor():void {
     const door=trains.find(t=>t.id===this.trainType)?.door;
@@ -302,7 +316,7 @@ export class TrainScene extends Phaser.Scene {
     if((remaining<=12&&this.velocity<1)||this.distance>=this.routeEnd()){
       this.distance=this.routeEnd();this.velocity=0;this.acceleration=0;this.targetVelocity=0;this.arrived=true;
     }
-    if(!this.reduced)this.wheels.forEach(w=>w.rotation+=this.velocity*dt/26);
+    if(!this.reduced){const {s}=this.dimensions();this.wheels.forEach(w=>w.rotation+=this.velocity*s*dt/Math.max(4,w.displayWidth/2));}
     this.renderWorld();this.publish();
   }
 }
