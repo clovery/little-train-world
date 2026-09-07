@@ -25,6 +25,9 @@ export interface SceneCallbacks {
   horn: () => void;
 }
 
+export const TRAIN_BASE_SPEED = 80;
+const TRAIN_MAX_SPEED = 210;
+
 /** Rendering owns a bounded pool of chunks; UI owns choices and speech. */
 export class TrainScene extends Phaser.Scene {
   private callbacks: SceneCallbacks;
@@ -141,7 +144,7 @@ export class TrainScene extends Phaser.Scene {
       this.arrived = false;
     }
     this.doorsOpen = false;
-    this.targetVelocity = Math.min(210, Math.max(80, this.targetVelocity + 55));
+    this.targetVelocity = Math.min(TRAIN_MAX_SPEED, Math.max(TRAIN_BASE_SPEED, this.targetVelocity + 55));
     this.pace = Math.max(this.pace, this.targetVelocity);
     this.publish();
   }

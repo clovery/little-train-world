@@ -203,18 +203,22 @@
 
   /* 语音气泡 */
   .speech {
-    @apply absolute z-2 top-[82px] left-[22px] flex items-center gap-2.5 py-3 px-3.5 rounded-[17px] text-[16px] font-bold leading-[1.5];
-    max-width: min(540px, calc(100% - 44px));
-    border: 1px solid #fff9;
-    background: #fffef4ed;
-    box-shadow: 0 8px 25px #1f3d2614;
+    @apply absolute z-2 top-auto left-1/2 bottom-[18px] flex items-center gap-2.5 py-2 px-2.5 pl-3.5 rounded-full text-[15px] font-bold leading-[1.4];
+    width: max-content;
+    max-width: min(540px, calc(100% - 460px));
+    transform: translateX(-50%);
+    border: 1px solid #ffffffc7;
+    background: #fffef2e8;
+    box-shadow: 0 10px 28px #1938291f, inset 0 1px 0 #fff;
+    backdrop-filter: blur(12px);
   }
   .speech::after {
     content: "";
-    @apply absolute -bottom-2 left-6;
-    border: 9px solid transparent;
+    @apply absolute -bottom-2 left-1/2;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
     border-bottom: 0;
-    border-top-color: #fffef4ed;
+    border-top-color: #fffef2e8;
   }
   #speech-icon {
     @apply flex-none;
@@ -225,11 +229,11 @@
     color: var(--color-orange-dark);
   }
   #speech-text {
-    @apply min-w-0;
+    @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
   }
   #replay {
-    @apply w-[34px] h-[34px] ml-auto rounded-full flex-none grid place-items-center;
-    background: #e8efdc;
+    @apply w-8 h-8 ml-auto rounded-full flex-none grid place-items-center;
+    background: #e4edd9;
     color: #526e50;
   }
   #replay svg {
@@ -373,6 +377,11 @@
   .go > span:first-child,
   .go > svg {
     @apply stroke-[2.4];
+  }
+  .speed-multiplier {
+    @apply min-w-[48px] py-1 px-2 rounded-full text-center text-[14px] font-black tracking-normal leading-none;
+    background: #ffffff2e;
+    border: 1px solid #ffffff38;
   }
   .go.moving {
     background: linear-gradient(180deg, #6e996d, #507b59);
@@ -608,107 +617,128 @@
   /* 响应式：手机 (≤650px) */
   @media (max-width: 650px) {
     .header {
-      @apply h-16 px-3.5;
+      @apply h-10 px-2;
     }
     .brand {
-      @apply text-[18px];
+      @apply gap-2 text-[16px];
     }
     .brand-icon {
-      @apply w-[41px] h-[41px] rounded-[14px] text-[24px];
+      @apply w-7 h-7 rounded-[9px] text-[17px];
     }
     .brand small {
-      @apply text-[8px];
+      @apply hidden;
+    }
+    .header-tools {
+      @apply gap-1.5;
+    }
+    .tool-button {
+      @apply min-h-8 rounded-[10px];
     }
     .day-button {
-      @apply w-[43px] p-0 justify-center;
+      @apply w-8 p-0 justify-center;
     }
     .day-button #day-label {
       @apply hidden;
     }
+    .sound-button {
+      @apply w-8;
+    }
     .cockpit {
-      @apply py-1 px-1 pb-3.5;
+      @apply p-1;
     }
     .playground {
-      border-width: 4px;
-      border-radius: 24px;
+      border-width: 2px;
+      border-radius: 18px;
     }
     .stage {
-      border-radius: 19px 19px 0 0;
+      border-radius: 15px 15px 0 0;
     }
     .scene-top {
-      @apply top-[11px] left-[11px] right-[11px] gap-[7px];
-      grid-template-columns: 1fr 1fr;
+      @apply top-2 left-2 right-2 gap-1.5;
+      grid-template-columns: auto minmax(0, 1fr);
     }
     .hud-pill {
-      @apply min-h-9 py-2 px-2.5 rounded-[13px] text-[12px];
+      @apply h-8 min-h-8 py-1.5 px-2 rounded-[11px] text-[11px];
+    }
+    .scene-top .state-tag {
+      @apply hidden;
     }
     .hud-progress {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      @apply py-1.5 px-2.5;
+      grid-column: 2;
+      grid-row: 1;
+      @apply h-8 min-h-8 py-1.5 px-2.5 rounded-[11px] justify-self-end flex items-center;
+      width: max-content;
+    }
+    .progress-box > div:first-child {
+      @apply justify-end items-center;
     }
     .progress-box strong {
-      @apply text-[12px];
+      @apply hidden;
     }
     .progress-box small {
-      @apply text-[11px];
+      @apply text-[10px];
+    }
+    .progress-track {
+      @apply hidden;
     }
     .speech {
-      @apply top-[93px] left-[11px] max-w-[calc(100%-22px)] py-2 px-2.5 text-[14px];
+      @apply top-auto left-1/2 bottom-2 min-h-11 py-1.5 px-2 text-[12px];
+      max-width: calc(100% - 112px);
     }
-    #speech-icon {
-      @apply text-[21px];
+    .speech-icon {
+      @apply w-[19px] h-[19px];
+    }
+    #speech-text {
+      @apply max-w-[190px];
     }
     #replay {
-      @apply w-[30px] h-[30px] text-[18px];
+      @apply w-7 h-7;
     }
     .stage-actions {
-      @apply left-2.5 right-2.5 bottom-2.5 gap-[7px];
+      @apply left-2 right-2 bottom-2;
     }
     .stage-action {
-      @apply min-w-0 min-h-[50px] py-1.5 px-2 rounded-[15px] flex-1;
+      @apply w-11 h-11 min-w-0 min-h-0 p-0 rounded-full grid place-items-center flex-none;
     }
-    .stage-action > span:first-child {
-      @apply w-[34px] h-[34px] rounded-[11px] text-[20px];
+    .stage-action > svg:first-child {
+      @apply w-5 h-5 p-0 bg-transparent;
     }
-    .stage-action small {
-      @apply text-[9px];
-    }
-    .stage-action strong {
-      @apply text-[12px];
-    }
-    .stage-action b {
+    .stage-action > span,
+    .stage-action-caret {
       @apply hidden;
     }
     .route-ribbon {
-      @apply min-h-[44px] py-1.5 px-2 justify-start;
-    }
-    .stop {
-      @apply text-[10px] py-1 px-1.5;
-    }
-    .stop > span:first-child {
-      @apply text-[16px];
+      @apply hidden;
     }
     .controls {
-      @apply min-h-[94px] py-2.5 px-2 pb-4 gap-2;
+      @apply relative min-h-[68px] py-1.5 px-2 pb-2 gap-2;
+      grid-template-columns: 62px minmax(0, 1fr) 62px;
     }
     .control-cluster {
       @apply gap-1.5;
+    }
+    .control-cluster-end {
+      grid-column: 3;
     }
     .control {
       @apply flex-col gap-[3px] text-[11px];
     }
     .big-control {
-      @apply min-w-0 min-h-[59px] px-2 text-[15px];
+      @apply min-w-0 min-h-[52px] px-1 text-[12px] rounded-2xl;
     }
     .control-icon {
       @apply w-[43px] h-[43px] rounded-[14px] text-[22px];
     }
     .big-control .control-icon {
-      @apply w-[34px] h-[34px] rounded-[12px] text-[18px];
+      @apply w-7 h-7 rounded-[10px];
     }
     .go {
-      @apply min-w-[140px] min-h-[59px] py-2.5 px-[15px] rounded-[19px] text-[19px] gap-2;
+      @apply absolute left-1/2 top-1.5 min-w-0 min-h-[52px] py-2 px-3 rounded-2xl text-[18px] gap-2;
+      width: calc(100% - 144px);
+      transform: translateX(-50%);
+    }
+    .go:active {
+      transform: translateX(-50%) translateY(2px);
     }
     .go > span:first-child {
       @apply text-[18px];
@@ -897,13 +927,115 @@
       @apply min-h-8 py-1.5 px-2 text-[11px];
     }
     .speech {
-      @apply top-[78px] py-1.5 px-2.5 text-[13px];
+      @apply top-auto bottom-[62px] py-1.5 px-2.5 text-[13px];
     }
     .stage-actions {
       @apply bottom-2;
     }
     .stage-action {
       @apply min-h-[46px] py-1 px-2;
+    }
+  }
+
+  /* 手机浏览器的可用高度可能同时命中矮屏规则，保持紧凑头部不被后续规则撑高。 */
+  @media (max-width: 650px) {
+    .header {
+      @apply h-10 px-2;
+    }
+    .brand-icon {
+      @apply w-7 h-7 rounded-[9px] text-[17px];
+    }
+    .tool-button {
+      @apply min-h-8 rounded-[10px];
+    }
+    .sound-button,
+    .day-button {
+      @apply w-8 h-8;
+    }
+  }
+
+  /* 响应式：iPad 横屏。保留驾驶必需信息，把重复状态和路线卡片收起来。 */
+  @media (orientation: landscape) and (min-width: 768px) and (max-width: 1366px) and (max-height: 1024px) {
+    .header {
+      @apply h-[52px] px-4;
+    }
+    .brand {
+      @apply gap-2 text-[17px];
+    }
+    .brand-icon {
+      @apply w-9 h-9 rounded-xl text-[21px];
+    }
+    .brand small {
+      @apply hidden;
+    }
+    .tool-button {
+      @apply min-h-9 px-2.5 rounded-xl text-[13px];
+    }
+    .sound-button {
+      @apply w-9;
+    }
+    .cockpit {
+      @apply py-1 px-2 pb-2;
+    }
+    .playground {
+      border-width: 4px;
+      border-radius: 24px;
+    }
+    .stage {
+      border-radius: 19px 19px 0 0;
+    }
+    .scene-top {
+      @apply top-3 left-3 right-auto gap-0;
+      width: min(320px, calc(100% - 24px));
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .scene-top .location,
+    .scene-top .state-tag {
+      @apply hidden;
+    }
+    .progress-box {
+      @apply min-h-9 py-1.5 px-3 rounded-[13px];
+    }
+    .progress-track {
+      @apply mt-1.5;
+    }
+    .speech {
+      @apply top-auto left-1/2 bottom-3 py-2 px-2.5 pl-3 rounded-full text-[14px];
+      max-width: min(420px, calc(100% - 390px));
+    }
+    #replay {
+      @apply w-[30px] h-[30px];
+    }
+    .stage-actions {
+      @apply left-3 right-3 bottom-3 gap-2;
+    }
+    .stage-action {
+      @apply min-w-[160px] min-h-12 py-1.5 px-2.5 rounded-[15px];
+    }
+    .stage-action > span:first-child,
+    .stage-action > svg {
+      @apply w-8 h-8 rounded-[10px] p-1.5;
+    }
+    .stage-action small {
+      @apply hidden;
+    }
+    .stage-action strong {
+      @apply text-[13px];
+    }
+    .route-ribbon {
+      @apply hidden;
+    }
+    .controls {
+      @apply min-h-[76px] py-2 px-5 pb-3 gap-4;
+    }
+    .big-control {
+      @apply min-w-[120px] min-h-[52px] px-3 text-[16px] rounded-[17px];
+    }
+    .big-control .control-icon {
+      @apply w-9 h-9 rounded-xl;
+    }
+    .go {
+      @apply min-w-[190px] min-h-[54px] py-2 px-5 rounded-[18px] text-[20px];
     }
   }
 

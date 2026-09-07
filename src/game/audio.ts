@@ -10,11 +10,62 @@ export class TrainAudio {
     void this.context.resume();
     return this.context;
   }
-  speak(text:string):void {
-    if(this.muted || !('speechSynthesis' in window))return;
+  private cachedVoices: SpeechSynthesisVoice[] = [];
+  private voicesReady = false;
+  /** Set up once, so the first speak() does not fall back to the OS default. */
+  primeVoices(): void {
+    if (!('speechSynthesis' in window)) return;
+    const collect = (): void => {
+      this.cachedVoices = window.speechSynthesis.getVoices();
+      this.voicesReady = this.cachedVoices.length > 0;
+    };
+    collect();
+    window.speechSynthesis.addEventListener?.('voiceschanged', collect);
+  }
+  /** Pick a zh-CN voice, falling back to other zh-* locales if the device has none. */
+  private pickChineseVoice(): SpeechSynthesisVoice | undefined {
+    if (!this.voicesReady) this.cachedVoices = window.speechSynthesis.getVoices() ?? [];
+    const voices = this.cachedVoices;
+    if (voices.length === 0) return undefined;
+
+    // Gentle, warmer Apple zh-CN voices sound better for kids' narration
+    // than the more news-anchor-like Tingting/Eddy/Flo.
+    const preferredNames = ['Sandy', 'Shelley', 'Reed', 'Grandma', 'Grandpa', 'Eddy', 'Flo', 'Rocko', 'Tingting'];
+
+    const localCn = voices.filter(v => v.localService && /^zh[-_]CN/i.test(v.lang));
+    if (localCn.length > 0) {
+      // Try preferred names first (in the curated order above).
+      for (const name of preferredNames) {
+        const hit = localCn.find(v => v.name.toLowerCase().startsWith(name.toLowerCase()));
+        if (hit) return hit;
+      }
+      return localCn[0];
+    }
+
+    // Fallbacks when no local zh-CN voice exists.
+    return (
+      voices.find(v => /^zh[-_]CN/i.test(v.lang)) ??
+      voices.find(v => /^zh[-_]hans/i.test(v.lang)) ??
+      voices.find(v => /^zh/i.test(v.lang)) ??
+      voices.find(v => /chinese|mandarin|cmn/i.test(v.name))
+    );
+  }
+  speak(text: string): void {
+    if (this.muted || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const speech=new SpeechSynthesisUtterance(text);speech.lang='zh-CN';speech.rate=.88;speech.pitch=1.08;
-    const voice=window.speechSynthesis.getVoices().find(v=>/^zh[-_]CN/i.test(v.lang));if(voice)speech.voice=voice;
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = 'zh-CN';
+    speech.rate = 0.82;
+    speech.pitch = 1.18;
+    const voice = this.pickChineseVoice();
+    if (voice) {
+      speech.voice = voice;
+      speech.lang = voice.lang; // Match the voice's actual locale to avoid mismatched fallback.
+    }
+    speech.onerror = (event) => console.warn('[speech] error', event);
+    if (import.meta.env.DEV) {
+      console.info('[speech] speak', { text, voice: voice?.name, lang: voice?.lang ?? speech.lang, local: voice?.localService });
+    }
     window.speechSynthesis.speak(speech);
   }
   tone(frequency:number,duration=.45,delay=0):void {

@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { asset, biomes, journeys, trains, type BiomeId, type TrainId } from './data/catalog';
 import { TrainAudio } from './game/audio';
-import { TrainScene, type SceneSnapshot } from './game/TrainScene';
+import { TRAIN_BASE_SPEED, TrainScene, type SceneSnapshot } from './game/TrainScene';
 
 const ICONS = {
   wave: Hand,
@@ -128,6 +128,7 @@ export function App() {
         readyRef.current = true;
         setReady(true);
         setLoadFailed(false);
+        audioRef.current.primeVoices();
       },
       failed: () => {
         setLoadFailed(true);
@@ -310,6 +311,7 @@ export function App() {
           ? '休息一下'
           : '准备出发';
   const progressText = snapshot.arrived ? '到站啦' : `第 ${snapshot.chunkIndex + 1} / ${currentStops.length} 段`;
+  const speedMultiplier = snapshot.speed < 1 ? null : `${(snapshot.speed / TRAIN_BASE_SPEED).toFixed(1)}×`;
 
   return (
     <>
@@ -358,12 +360,12 @@ export function App() {
             </div>
 
             <div className="stage-actions" aria-label="游戏选择">
-              <button id="open-garage" className="stage-action" disabled={!ready} onClick={() => { pauseForPicker(); openDialog(garageDialogRef.current); }}>
+              <button id="open-garage" className="stage-action" aria-label={`选择火车，当前${train.name}`} disabled={!ready} onClick={() => { pauseForPicker(); openDialog(garageDialogRef.current); }}>
                 <Icon name="train" size={22} />
                 <span><small>现在驾驶</small><strong id="current-train">{train.name}</strong></span>
                 <Icon name="chevron" size={16} className="stage-action-caret" />
               </button>
-              <button id="open-routes" className="stage-action" disabled={!ready} onClick={() => { pauseForPicker(); openDialog(routesDialogRef.current); }}>
+              <button id="open-routes" className="stage-action" aria-label={`选择旅行路线，当前${currentRoute}`} disabled={!ready} onClick={() => { pauseForPicker(); openDialog(routesDialogRef.current); }}>
                 <Icon name="route" size={22} />
                 <span><small>旅行路线</small><strong id="current-route">{currentRoute}</strong></span>
                 <Icon name="chevron" size={16} className="stage-action-caret" />
@@ -399,9 +401,16 @@ export function App() {
                 <span className="control-icon horn"><Icon name="horn" size={26} strokeWidth={2.2} /></span><span>鸣笛</span>
               </button>
             </div>
-            <button id="go" className={`go ${snapshot.speed > 20 ? 'moving' : ''}`} disabled={!ready} onClick={handleGo}>
+            <button
+              id="go"
+              className={`go ${snapshot.speed > 20 ? 'moving' : ''}`}
+              disabled={!ready}
+              aria-label={snapshot.arrived ? '再出发' : speedMultiplier ? `加速，目前 ${speedMultiplier} 速度` : '加速'}
+              onClick={handleGo}
+            >
               <Icon name={snapshot.arrived ? 'again' : 'go'} size={22} />
               <span id="go-label">{snapshot.arrived ? '再出发' : '加速'}</span>
+              {!snapshot.arrived && speedMultiplier && <small className="speed-multiplier">{speedMultiplier}</small>}
             </button>
             <div className="control-cluster control-cluster-end">
               <button id="brake" className="control big-control brake-button" disabled={!ready} onClick={handleBrake}>
@@ -410,7 +419,6 @@ export function App() {
             </div>
           </div>
         </section>
-        <p className="parent-note">没有输赢，慢慢开，和爸爸妈妈一起看看世界。</p>
       </main>
 
       <dialog ref={garageDialogRef} id="garage-drawer" className="game-sheet" aria-labelledby="garage-title" onClick={handleBackdropClick}>
