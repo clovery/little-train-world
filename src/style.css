@@ -174,6 +174,9 @@
     background: #e8f3dce8;
     color: #3f684d;
   }
+  .landscape-logo {
+    @apply hidden;
+  }
   .progress-box {
     @apply px-[14px] py-2 rounded-2xl;
     min-height: 42px;
@@ -1036,6 +1039,177 @@
     }
     .go {
       @apply min-w-[190px] min-h-[54px] py-2 px-5 rounded-[18px] text-[20px];
+    }
+  }
+
+  /* 响应式：手机横屏。以高度识别横屏手机，避免 844px 等宽度误用桌面布局。 */
+  @media (orientation: landscape) and (max-width: 950px) and (max-height: 500px) {
+    .header {
+      @apply hidden;
+    }
+    .cockpit {
+      @apply py-0.5 pb-1;
+      padding-left: max(4px, env(safe-area-inset-left));
+      padding-right: max(4px, env(safe-area-inset-right));
+    }
+    .playground {
+      border-width: 2px;
+      border-radius: 18px;
+    }
+    .stage {
+      border-radius: 15px 15px 0 0;
+    }
+    .scene-top {
+      @apply top-2 left-2 right-2 gap-1.5;
+      width: auto;
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .scene-top .location {
+      @apply flex items-center gap-1.5;
+    }
+    .landscape-logo {
+      @apply w-6 h-6 -ml-1 grid place-items-center rounded-lg text-[15px] flex-none;
+      background: #f2dfad;
+      box-shadow: inset 0 0 0 1px #fff8;
+    }
+    .scene-top .state-tag {
+      @apply hidden;
+    }
+    .hud-pill {
+      @apply h-8 min-h-8 py-1.5 px-2 rounded-[11px] text-[11px];
+    }
+    .hud-progress {
+      @apply h-8 min-h-8 py-1.5 px-2.5 rounded-[11px] justify-self-end flex items-center;
+      width: max-content;
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .progress-box > div:first-child {
+      @apply items-center justify-end;
+    }
+    .progress-box strong,
+    .progress-track {
+      @apply hidden;
+    }
+    .progress-box small {
+      @apply text-[10px];
+    }
+    .speech {
+      @apply left-1/2 bottom-2 min-h-11 py-1.5 px-2 text-[12px];
+      max-width: calc(100% - 120px);
+    }
+    .speech-icon {
+      @apply w-[19px] h-[19px];
+    }
+    #speech-text {
+      @apply max-w-[360px];
+    }
+    #replay {
+      @apply w-7 h-7;
+    }
+    .stage-actions {
+      @apply left-2 right-2 bottom-2;
+    }
+    .stage-action {
+      @apply w-11 h-11 min-w-0 min-h-0 p-0 rounded-full grid place-items-center flex-none;
+    }
+    .stage-action > svg:first-child {
+      @apply w-5 h-5 p-0 bg-transparent;
+    }
+    .stage-action > span,
+    .stage-action-caret {
+      @apply hidden;
+    }
+    .route-ribbon {
+      @apply hidden;
+    }
+    .controls {
+      @apply relative min-h-[52px] py-1 px-2 gap-2;
+      grid-template-columns: 62px minmax(0, 1fr) 62px;
+      padding-left: max(8px, env(safe-area-inset-left));
+      padding-right: max(8px, env(safe-area-inset-right));
+    }
+    .control-cluster {
+      @apply gap-1.5;
+    }
+    .control-cluster-end {
+      grid-column: 3;
+    }
+    .control {
+      @apply flex-col gap-[2px] text-[11px];
+    }
+    .big-control {
+      @apply min-w-0 min-h-11 px-1 text-[10px] rounded-[14px];
+    }
+    .big-control .control-icon {
+      @apply w-6 h-6 rounded-lg;
+    }
+    .big-control > span:last-child {
+      @apply hidden;
+    }
+    .go {
+      @apply absolute left-1/2 top-1 min-w-0 min-h-11 py-1 px-3 rounded-[14px] text-[17px] gap-2;
+      width: min(220px, calc(100% - 160px));
+      transform: translateX(-50%);
+    }
+    .go:active {
+      transform: translateX(-50%) translateY(2px);
+    }
+    .sheet-panel {
+      @apply max-h-[88dvh] py-2 px-3.5 pb-3 rounded-t-[20px];
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+    }
+    .sheet-handle {
+      @apply mb-1.5;
+    }
+    .sheet-head {
+      @apply mb-2;
+    }
+    .sheet-head h2,
+    .dialog-head h2 {
+      @apply mt-0 text-[19px];
+    }
+    .choice {
+      @apply p-2 rounded-[14px];
+    }
+    .choice-art {
+      @apply h-[48px] mb-1;
+    }
+    .journey-choices {
+      grid-template-columns: 1fr 1fr;
+    }
+    .journey-choice,
+    .build-route {
+      @apply min-h-[58px] py-2;
+    }
+    .builder-dialog {
+      @apply max-h-[94dvh] p-4 rounded-[20px];
+      width: min(820px, calc(100% - 32px));
+    }
+    .builder-hint {
+      @apply my-1 text-[12px];
+    }
+    .terrain-choices {
+      @apply my-2;
+    }
+    .terrain-choices img {
+      @apply h-[48px] mb-1;
+    }
+    .builder-route {
+      @apply min-h-[70px] py-2 px-3;
+    }
+    .builder-route b {
+      @apply text-[24px];
+    }
+    .builder-tools {
+      @apply mt-2;
+    }
+    .builder-status {
+      @apply min-h-4 my-1;
+    }
+    .apply-route {
+      @apply min-h-11 text-[16px];
     }
   }
 

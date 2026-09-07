@@ -343,7 +343,10 @@ export function App() {
             <div ref={gameHostRef} id="game" role="img" aria-label="火车沿着连续拼接的田野、森林、海岸、沙漠和雪山铁路行驶" />
 
             <div className="scene-top">
-              <span id="location" className="hud-pill location">{biomes[snapshot.biome].icon} {biomes[snapshot.biome].name}</span>
+              <span id="location" className="hud-pill location">
+                <span className="landscape-logo" aria-hidden="true">🚂</span>
+                <span>{biomes[snapshot.biome].icon} {biomes[snapshot.biome].name}</span>
+              </span>
               <div className="progress-box hud-progress">
                 <div><strong id="route-title">{currentRoute}</strong><small id="progress-text">{progressText}</small></div>
                 <div className="progress-track" aria-hidden="true"><i id="progress" style={{ width: `${snapshot.progress * 100}%` }} /></div>
