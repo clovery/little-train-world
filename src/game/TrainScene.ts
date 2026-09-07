@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { asset, biomes, trains, type BiomeId, type TrainId } from '../data/catalog';
 import { brakingSpeed, stepMotion } from './motion';
-import { CHUNK_LENGTH, OVERLAP, createRoute, sampleTerrain, visibleChunks, type RouteChunk } from './route';
+import { CHUNK_LENGTH, OVERLAP, createRoute, visibleChunks, type RouteChunk } from './route';
+import { getTunnelSegmentAt, sampleTrack, visibleTunnelSegments, type TunnelSegment } from './trackPath';
 import { wheelLayouts, type WheelSpec } from './wheelLayouts';
 
 export interface SceneSnapshot {
@@ -33,12 +34,15 @@ export class TrainScene extends Phaser.Scene {
   private particles!:Phaser.GameObjects.Graphics;
   private atmosphere!:Phaser.GameObjects.Graphics;
   private foreground!:Phaser.GameObjects.Graphics;
+  private tunnelBack!:Phaser.GameObjects.Graphics;
+  private tunnelFront!:Phaser.GameObjects.Graphics;
   private shadow!:Phaser.GameObjects.Ellipse;
   private trainType:TrainId='steam';
   private distance=0;
   private velocity=0;
   private acceleration=0;
   private targetVelocity=0;
+  private cameraDistance=0;
   private pace=135;
   private doorsOpen=false;
   private doorFraction=0;
@@ -54,6 +58,9 @@ export class TrainScene extends Phaser.Scene {
   private missingAssets=false;
   private suspension=0;
   private suspensionVelocity=0;
+  private couplerStretch=0;
+  private couplerVelocity=0;
+  private wheelTravel=0;
 
   constructor(callbacks:SceneCallbacks){super('TrainWorld');this.callbacks=callbacks;}
   preload():void {
@@ -79,11 +86,13 @@ export class TrainScene extends Phaser.Scene {
     const b=beam.context;const g=b.createLinearGradient(0,0,300,0);g.addColorStop(0,'rgba(255,238,167,.65)');g.addColorStop(1,'rgba(255,238,167,0)');
     b.fillStyle=g;b.beginPath();b.moveTo(0,43);b.lineTo(300,0);b.lineTo(300,100);b.lineTo(0,57);b.closePath();b.fill();beam.refresh();
     this.atmosphere=this.add.graphics().setDepth(12);
+    this.tunnelBack=this.add.graphics().setDepth(19);
     this.shadow=this.add.ellipse(0,0,1,1,0x24372f,.2).setDepth(24);
     this.train=this.add.container(0,0).setDepth(30);
     this.body=this.add.image(0,0,'steam').setOrigin(0,0);this.train.add(this.body);
     this.foreground=this.add.graphics().setDepth(33);
     this.particles=this.add.graphics().setDepth(35);
+    this.tunnelFront=this.add.graphics().setDepth(37);
     this.darkness=this.add.rectangle(0,0,1,1,0x122342,0).setOrigin(0).setDepth(40);
     this.light=this.add.image(0,0,'beam').setOrigin(0,.5).setDepth(41).setVisible(false);
     this.body.setInteractive({useHandCursor:true}).on('pointerdown',()=>this.callbacks.horn());
@@ -122,9 +131,17 @@ export class TrainScene extends Phaser.Scene {
     this.trainWidth=Math.min(w*.88,840,h*1.85);
     this.trainHeight=this.trainWidth*img.height/img.width;
     this.body.setPosition(-this.trainWidth/2,-this.trainHeight).setDisplaySize(this.trainWidth,this.trainHeight);
-    const wheelSpecs=wheelLayouts[this.trainType];
-    this.wheels.forEach((wheel,i)=>{const c=wheelSpecs[i];wheel.setPosition((c.x-.5)*this.trainWidth,(c.y-1)*this.trainHeight).setDisplaySize(c.radius*2*this.trainWidth,c.radius*2*this.trainWidth);});
+    this.layoutRunningGear(0);
     this.layoutDoor();
+  }
+  private layoutRunningGear(stretch:number):void {
+    const wheelSpecs=wheelLayouts[this.trainType];
+    this.wheels.forEach((wheel,i)=>{
+      const c=wheelSpecs[i];
+      const rearBias=1-c.x;
+      const jointWave=this.reduced?0:Math.sin(this.wheelTravel*.055+i*.9)*Math.min(1.5,this.velocity*.006);
+      wheel.setPosition((c.x-.5)*this.trainWidth-stretch*rearBias+jointWave,(c.y-1)*this.trainHeight).setDisplaySize(c.radius*2*this.trainWidth,c.radius*2*this.trainWidth);
+    });
   }
   private wheelTexture(spec:WheelSpec,index:number):string {
     if(spec.texture)return spec.texture;
@@ -150,7 +167,7 @@ export class TrainScene extends Phaser.Scene {
   selectTrain(id:TrainId):void {if(!this.ready)return;this.stopImmediately();this.trainType=id;this.doorsOpen=false;this.doorFraction=0;this.makeTrain();this.publish();}
   setRoute(stops:BiomeId[]):void {
     if(!this.ready||stops.length<2)return;
-    this.stopImmediately();this.chunks=createRoute(stops);this.distance=0;this.arrived=false;this.doorsOpen=false;this.doorFraction=0;
+    this.stopImmediately();this.chunks=createRoute(stops);this.distance=0;this.cameraDistance=0;this.wheelTravel=0;this.arrived=false;this.doorsOpen=false;this.doorFraction=0;
     this.chunksOnScreen.forEach(c=>c.destroy());this.chunksOnScreen.clear();this.renderWorld();this.publish();
   }
   toggleRunning():void {
@@ -160,7 +177,16 @@ export class TrainScene extends Phaser.Scene {
     else {this.doorsOpen=false;this.targetVelocity=this.pace;}
     this.publish();
   }
-  stopImmediately():void {this.velocity=0;this.acceleration=0;this.targetVelocity=0;this.suspension=0;this.suspensionVelocity=0;this.publish();}
+  accelerate():void {
+    if(!this.ready)return;
+    if(this.arrived){this.distance=0;this.cameraDistance=0;this.wheelTravel=0;this.arrived=false;}
+    this.doorsOpen=false;
+    this.targetVelocity=Math.min(210,Math.max(80,this.targetVelocity+55));
+    this.pace=Math.max(this.pace,this.targetVelocity);
+    this.publish();
+  }
+  brake():void {if(!this.ready)return;this.targetVelocity=0;this.publish();}
+  stopImmediately():void {this.velocity=0;this.acceleration=0;this.targetVelocity=0;this.suspension=0;this.suspensionVelocity=0;this.couplerStretch=0;this.couplerVelocity=0;this.publish();}
   toggleDoor():boolean {
     if(!this.ready || this.velocity>.5||this.targetVelocity>0)return false;
     this.doorsOpen=!this.doorsOpen;this.publish();return true;
@@ -168,10 +194,10 @@ export class TrainScene extends Phaser.Scene {
   setPace(value:number):void {this.pace=value;if(this.targetVelocity>0)this.targetVelocity=value;}
   setNight(value:boolean):void {this.isNight=value;}
   honk():void {this.honkUntil=this.time.now+750;}
-  restart():void {this.distance=0;this.arrived=false;this.velocity=0;this.acceleration=0;this.targetVelocity=0;this.doorsOpen=false;this.toggleRunning();}
+  restart():void {this.distance=0;this.cameraDistance=0;this.wheelTravel=0;this.arrived=false;this.velocity=0;this.acceleration=0;this.targetVelocity=0;this.doorsOpen=false;this.toggleRunning();}
   private routeEnd():number {const {w,s}=this.dimensions();return Math.max(100,this.chunks.length*CHUNK_LENGTH-w/s);}
   private snapshot():SceneSnapshot {
-    const {s,anchor}=this.dimensions();const i=sampleTerrain(this.chunks,this.distance+anchor/s).index;
+    const {s,anchor}=this.dimensions();const i=sampleTrack(this.chunks,this.distance+anchor/s).index;
     return {moving:this.targetVelocity>0,stopping:this.targetVelocity===0&&this.velocity>.5,doorsOpen:this.doorsOpen,progress:Math.min(1,this.distance/this.routeEnd()),biome:this.chunks[i].biome as BiomeId,chunkIndex:i,arrived:this.arrived,speed:this.velocity,acceleration:this.acceleration};
   }
   private publish():void {
@@ -253,9 +279,52 @@ export class TrainScene extends Phaser.Scene {
       for(let i=0;i<18;i++){const x=this.wrap(i*79-shift,w+40)-20;this.foreground.fillEllipse(x,h-(4+i%3*3)*s,(7+i%4*2)*s,(3+i%2)*s);}
     }
   }
+  private drawTunnels(camera:number,viewport:number,s:number):void {
+    this.tunnelBack.clear();this.tunnelFront.clear();
+    const segments=visibleTunnelSegments(this.chunks,camera,viewport);
+    for(const segment of segments)this.drawTunnel(segment,camera,s);
+  }
+  private drawTunnel(segment:TunnelSegment,camera:number,s:number):void {
+    const start=sampleTrack(this.chunks,segment.start);
+    const end=sampleTrack(this.chunks,segment.end);
+    const peak=sampleTrack(this.chunks,segment.peak);
+    const x1=(segment.start-camera)*s;
+    const x2=(segment.end-camera)*s;
+    const width=x2-x1;
+    const y=Math.min(start.y,end.y,peak.y)*s;
+    const floor=Math.max(start.y,end.y,peak.y)*s+30*s;
+    const mountain=segment.biome==='snow'?0x8da3ae:0x526f55;
+    const shade=segment.biome==='snow'?0x5f737e:0x334d3a;
+    const mouth=0x1d2929;
+
+    this.tunnelBack.fillStyle(mountain,.92);
+    this.tunnelBack.fillEllipse(x1+width*.5,floor-8*s,width+250*s,190*s);
+    this.tunnelBack.fillStyle(shade,.82);
+    this.tunnelBack.fillEllipse(x1+width*.5,floor+10*s,width+110*s,96*s);
+    this.tunnelBack.fillStyle(mouth,.96);
+    this.tunnelBack.fillEllipse(x1+8*s,floor+4*s,78*s,96*s);
+    this.tunnelBack.fillEllipse(x2-8*s,floor+4*s,78*s,96*s);
+
+    this.tunnelFront.fillStyle(mountain,.98);
+    this.tunnelFront.fillEllipse(x1+width*.5,floor-3*s,width+230*s,176*s);
+    this.tunnelFront.fillStyle(mouth,1);
+    this.tunnelFront.fillEllipse(x1+8*s,floor+5*s,88*s,106*s);
+    this.tunnelFront.fillEllipse(x2-8*s,floor+5*s,88*s,106*s);
+    this.tunnelFront.fillStyle(0x111b1d,.94);
+    this.tunnelFront.fillRect(x1+8*s,floor-45*s,width-16*s,96*s);
+    this.tunnelFront.fillStyle(mountain,1);
+    this.tunnelFront.fillRect(x1-70*s,floor+28*s,width+140*s,86*s);
+    this.tunnelFront.lineStyle(Math.max(2,3*s),0xf2efe0,.32);
+    this.tunnelFront.strokeEllipse(x1+8*s,floor+5*s,88*s,106*s);
+    this.tunnelFront.strokeEllipse(x2-8*s,floor+5*s,88*s,106*s);
+    if(segment.biome==='snow'){
+      this.tunnelFront.fillStyle(0xf3fbff,.72);
+      for(let i=0;i<5;i++)this.tunnelFront.fillEllipse(x1+width*(.16+i*.17),y+42*s+(i%2)*9*s,72*s,12*s);
+    }
+  }
   private renderWorld():void {
     const {w,h,s,anchor}=this.dimensions();
-    const camera=this.distance;
+    const camera=this.cameraDistance;
     const visible=visibleChunks(this.chunks,camera,w/s);
     const keys=new Set(visible.map(c=>c.index));
     this.chunksOnScreen.forEach((img,key)=>{if(!keys.has(key)){img.destroy();this.chunksOnScreen.delete(key);}});
@@ -266,24 +335,29 @@ export class TrainScene extends Phaser.Scene {
     }
     const first=Math.floor(camera/32)*32;
     this.rails.forEach((rail,i)=>{
-      const x=first+i*32;const {height,slope}=sampleTerrain(this.chunks,x);
-      rail.setPosition((x-camera)*s,(500+height)*s).setSize(34,31).setScale(s).setRotation(Math.atan(slope));
+      const x=first+i*32;const track=sampleTrack(this.chunks,x);
+      rail.setPosition((track.x-camera)*s,track.y*s).setSize(34,31).setScale(s).setRotation(track.angle);
       rail.tilePositionX=x;
     });
-    const terrain=sampleTerrain(this.chunks,camera+anchor/s);
-    const biome=this.chunks[terrain.index].biome as BiomeId;
+    this.drawTunnels(camera,w/s,s);
+    const track=sampleTrack(this.chunks,this.distance+anchor/s);
+    const tunnel=getTunnelSegmentAt(this.chunks,this.distance+anchor/s);
+    const biome=this.chunks[track.index].biome as BiomeId;
     this.drawAtmosphere(biome,w,h,s,camera);
     this.drawForeground(biome,w,h,s,camera);
     const honk=!this.reduced&&this.time.now<this.honkUntil?Math.sin(this.time.now*.025)*2:0;
     const inertiaShift=this.reduced?0:Phaser.Math.Clamp(-this.acceleration*.18,-8,8);
     const railRoll=this.reduced?0:Math.sin(this.distance*.075)*Math.min(.005,this.velocity*.000035);
-    const trainX=anchor+inertiaShift;
-    const trainY=(489+terrain.height)*s+this.suspension-honk;
-    this.train.setPosition(trainX,trainY).setRotation(Math.atan(terrain.slope)+railRoll+Phaser.Math.Clamp(-this.acceleration*.00032,-.012,.012));
-    this.shadow.setPosition(trainX,(499+terrain.height)*s).setDisplaySize(this.trainWidth*.78,Math.max(9,18*s)).setRotation(Math.atan(terrain.slope)).setAlpha(this.isNight?.12:.22);
+    const trainX=(this.distance+anchor/s-camera)*s+inertiaShift;
+    const trainY=(track.y-11)*s+this.suspension-honk;
+    const pitch=track.angle+railRoll+Phaser.Math.Clamp(-this.acceleration*.00032,-.012,.012);
+    this.layoutRunningGear(this.couplerStretch*s);
+    this.body.x=-this.trainWidth/2+Phaser.Math.Clamp(this.couplerStretch*s*.2,-2.5,2.5);
+    this.train.setPosition(trainX,trainY).setRotation(pitch);
+    this.shadow.setPosition(trainX,(track.y-1)*s).setDisplaySize(this.trainWidth*.78,Math.max(9,18*s)).setRotation(track.angle).setAlpha(this.isNight?.12:.22);
     this.layoutDoor();
-    this.darkness.setAlpha(this.isNight?.42:0);
-    this.light.setVisible(this.isNight).setPosition(trainX+this.trainWidth*.48,this.train.y-this.trainHeight*.45).setDisplaySize(w*.28,h*.2);
+    this.darkness.setAlpha(tunnel?.28:this.isNight?.42:0);
+    this.light.setVisible(this.isNight||Boolean(tunnel)).setPosition(trainX+this.trainWidth*.48,this.train.y-this.trainHeight*.45).setDisplaySize(w*.28,h*.2);
     this.particles.clear();
     if(this.trainType==='steam'&&this.velocity>1&&!this.reduced){
       const effort=Phaser.Math.Clamp(.35+Math.max(0,this.acceleration)/42,0,1);
@@ -307,16 +381,25 @@ export class TrainScene extends Phaser.Scene {
     const motion=stepMotion({speed:this.velocity,acceleration:this.acceleration},target,dt);
     this.velocity=motion.speed;this.acceleration=motion.acceleration;
     this.distance=Math.min(this.routeEnd(),this.distance+this.velocity*dt);
+    const {s}=this.dimensions();
     const speedRatio=Math.min(1,this.velocity/Math.max(1,this.pace));
+    const lookAhead=(20+speedRatio*68+Phaser.Math.Clamp(this.acceleration,0,34)*1.4)/s;
+    const cameraTarget=Phaser.Math.Clamp(this.distance+lookAhead,0,this.routeEnd());
+    this.cameraDistance=Phaser.Math.Linear(this.cameraDistance,cameraTarget,1-Math.exp(-3.8*dt));
     const railPulse=this.reduced?0:Math.sin(this.distance*.31)*.72*speedRatio;
     const suspensionTarget=railPulse-Phaser.Math.Clamp(this.acceleration*.018,-.9,.9);
     this.suspensionVelocity+=(suspensionTarget-this.suspension)*55*dt;
     this.suspensionVelocity*=Math.exp(-10*dt);
     this.suspension+=this.suspensionVelocity*dt;
+    const stretchTarget=this.reduced?0:Phaser.Math.Clamp(this.acceleration*.11,-4.8,4.2);
+    this.couplerVelocity+=(stretchTarget-this.couplerStretch)*34*dt;
+    this.couplerVelocity*=Math.exp(-8*dt);
+    this.couplerStretch+=this.couplerVelocity*dt;
     if((remaining<=12&&this.velocity<1)||this.distance>=this.routeEnd()){
       this.distance=this.routeEnd();this.velocity=0;this.acceleration=0;this.targetVelocity=0;this.arrived=true;
     }
-    if(!this.reduced){const {s}=this.dimensions();this.wheels.forEach(w=>w.rotation+=this.velocity*s*dt/Math.max(4,w.displayWidth/2));}
+    this.wheelTravel+=this.velocity*dt;
+    if(!this.reduced)this.wheels.forEach((w,i)=>{const radius=Math.max(4,wheelLayouts[this.trainType][i].radius*this.trainWidth);w.rotation=this.wheelTravel*s/radius;});
     this.renderWorld();this.publish();
   }
 }

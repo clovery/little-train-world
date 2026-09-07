@@ -323,24 +323,31 @@
   .control {
     @apply p-0 flex items-center gap-2 bg-transparent text-[14px] font-extrabold whitespace-nowrap;
   }
+  .big-control {
+    @apply min-w-[138px] min-h-[62px] justify-center px-4 rounded-[20px] text-[19px] text-white;
+    box-shadow: 0 6px 0 #49604a, 0 12px 25px #315d4320;
+  }
   .control-icon {
     @apply w-[52px] h-[52px] grid place-items-center rounded-[17px] text-[26px];
     background: #edf0e7;
   }
   .control-icon.horn {
-    @apply bg-[#f4e3bc];
+    @apply bg-[#f4e3bc] text-[#6c5121];
   }
-  .control-icon.door {
-    @apply bg-[#dfeadd];
+  .big-control .control-icon {
+    @apply w-[42px] h-[42px] rounded-[15px] flex-none;
+    background: #ffffff30;
+    color: inherit;
+  }
+  .big-control {
+    background: linear-gradient(180deg, #719a6b, #547b58);
+  }
+  .brake-button {
+    background: linear-gradient(180deg, #6f8792, #526974);
+    box-shadow: 0 6px 0 #354a53, 0 12px 25px #304b5520;
   }
   .control[aria-pressed="true"] .control-icon {
     @apply bg-[#bbd7b4];
-  }
-  .speed .control-icon {
-    @apply w-[42px] h-[42px] rounded-[14px] text-[21px];
-  }
-  .speed {
-    @apply text-[#67786b] text-[13px];
   }
   .go {
     @apply min-w-[230px] min-h-[66px] py-3 px-7 flex items-center justify-center gap-3.5 rounded-[22px] text-[#fffaf3] text-[23px] font-black tracking-[0.08em];
@@ -662,14 +669,14 @@
     .control {
       @apply flex-col gap-[3px] text-[11px];
     }
+    .big-control {
+      @apply min-w-0 min-h-[59px] px-2 text-[15px];
+    }
     .control-icon {
       @apply w-[43px] h-[43px] rounded-[14px] text-[22px];
     }
-    .speed .control-icon {
-      @apply w-[35px] h-[35px] rounded-[12px] text-[18px];
-    }
-    .speed {
-      @apply text-[9px];
+    .big-control .control-icon {
+      @apply w-[34px] h-[34px] rounded-[12px] text-[18px];
     }
     .go {
       @apply min-w-[140px] min-h-[59px] py-2.5 px-[15px] rounded-[19px] text-[19px] gap-2;
@@ -845,7 +852,10 @@
     .control {
       @apply gap-1 text-[12px];
     }
-    .speed .control-icon {
+    .big-control {
+      @apply min-h-12 text-[13px];
+    }
+    .big-control .control-icon {
       @apply w-8 h-8 text-[16px];
     }
     .go {

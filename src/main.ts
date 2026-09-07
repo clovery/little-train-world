@@ -63,19 +63,16 @@ root.innerHTML=`
 
     <div class="controls">
       <div class="control-cluster">
-        <button id="horn" class="control" data-ready>
+        <button id="horn" class="control big-control" data-ready>
           <span class="control-icon horn" aria-hidden="true">📣</span><span>鸣笛</span>
-        </button>
-        <button id="speed" class="control speed" data-ready aria-label="调整行驶速度">
-          <span class="control-icon" aria-hidden="true">🐢</span><span id="speed-label">慢慢开</span>
         </button>
       </div>
       <button id="go" class="go" data-ready>
-        <span id="go-icon" aria-hidden="true">▶</span><span id="go-label">出发啦</span>
+        <span id="go-icon" aria-hidden="true">▲</span><span id="go-label">加速</span>
       </button>
       <div class="control-cluster control-cluster-end">
-        <button id="door" class="control" data-ready aria-pressed="false">
-          <span class="control-icon door" aria-hidden="true">🚪</span><span id="door-label">开车门</span>
+        <button id="brake" class="control big-control brake-button" data-ready>
+          <span class="control-icon brake" aria-hidden="true">▼</span><span>刹车</span>
         </button>
       </div>
     </div>
@@ -141,11 +138,10 @@ function el<T extends HTMLElement=HTMLElement>(id:string):T {
 }
 
 const audio=new TrainAudio();
-let selectedTrain:TrainId='steam',night=false,ready=false,paceIndex=0;
+let selectedTrain:TrainId='steam',night=false,ready=false;
 let currentStops:BiomeId[]=[...journeys[0].stops],customStops:BiomeId[]=['countryside','forest','coast'];
 let lastBiome:BiomeId='countryside',lastArrived=false;
 let snapshot:SceneSnapshot={moving:false,stopping:false,doorsOpen:false,progress:0,biome:'countryside',chunkIndex:0,arrived:false,speed:0,acceleration:0};
-const paces=[{speed:135,name:'慢慢开',icon:'🐢'},{speed:200,name:'快一点',icon:'🐇'},{speed:90,name:'看看风景',icon:'🌿'}];
 const buttons=[...document.querySelectorAll<HTMLButtonElement>('[data-ready]')];
 buttons.forEach(button=>button.disabled=true);
 
@@ -158,13 +154,10 @@ function updateRibbon():void {
 function onChange(state:SceneSnapshot):void {
   const previous=snapshot;snapshot=state;audio.setMotion(state.speed,state.acceleration);
   const moving=state.moving||state.stopping;
-  el<HTMLButtonElement>('door').disabled=!ready||moving;
-  el('door').setAttribute('aria-pressed',String(state.doorsOpen));
-  el('door-label').textContent=state.doorsOpen?'关车门':'开车门';
   el('door-note').hidden=!state.doorsOpen;
-  el('go').classList.toggle('moving',state.moving);
-  el('go-label').textContent=state.moving?'停一停':state.arrived?'再出发':'出发啦';
-  el('go-icon').textContent=state.moving?'Ⅱ':'▶';
+  el('go').classList.toggle('moving',state.speed>20);
+  el('go-label').textContent=state.arrived?'再出发':'加速';
+  el('go-icon').textContent=state.arrived?'▶':'▲';
   el('journey-state').textContent=state.arrived?'到站啦':state.stopping?'慢慢停下':state.moving?'旅行中':state.progress>0?'休息一下':'准备出发';
   el('progress').style.width=`${state.progress*100}%`;
   el('progress-text').textContent=state.arrived?'到站啦':`第 ${state.chunkIndex+1} / ${currentStops.length} 段`;
@@ -207,24 +200,11 @@ const builderDialog=el<HTMLDialogElement>('builder');
 el('reload').addEventListener('click',()=>location.reload());
 el('horn').addEventListener('click',horn);
 el('go').addEventListener('click',()=>{
-  const wasMoving=snapshot.moving;audio.enableEngine();scene.toggleRunning();
-  say(wasMoving?'慢慢停下来，看看窗外吧。':'车门关好，坐坐好，我们出发啦！',wasMoving?'🌿':'🚂');
+  audio.enableEngine();scene.accelerate();
+  say(snapshot.arrived?'再开一趟，看看熟悉的风景！':'加速啦，坐坐稳！','🚂');
 });
-el('door').addEventListener('click',()=>{
-  if(scene.toggleDoor()){
-    const open=snapshot.doorsOpen;
-    const isWork=selectedTrain==='maintenance'||selectedTrain==='freight';
-    say(open?(isWork?'驾驶室的门打开啦，驾驶员上车。':'车门打开啦，上车后坐坐好。'):'车门关好啦，可以出发了！',open?'🚪':'👌');
-    audio.tone(open?660:440,.15);
-  }
-});
+el('brake').addEventListener('click',()=>{scene.brake();say('慢慢刹车，准备停稳。','🛑');});
 el('again').addEventListener('click',()=>{scene.restart();say('再开一趟，看看熟悉的风景！','🚂');});
-el('speed').addEventListener('click',()=>{
-  paceIndex=(paceIndex+1)%paces.length;
-  const pace=paces[paceIndex];scene.setPace(pace.speed);
-  el('speed-label').textContent=pace.name;el('speed').firstElementChild!.textContent=pace.icon;
-  say(pace.name+'，坐稳啦！',pace.icon);
-});
 el('day').addEventListener('click',()=>{
   night=!night;scene.setNight(night);
   el('day').setAttribute('aria-pressed',String(night));
