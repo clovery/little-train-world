@@ -27,13 +27,13 @@ function el<T extends HTMLElement=HTMLElement>(id:string):T {const node=document
 const audio=new TrainAudio();
 let selectedTrain:TrainId='steam',night=false,ready=false,paceIndex=0;
 let currentStops:BiomeId[]=[...journeys[0].stops],customStops:BiomeId[]=['countryside','forest','coast'];
-let lastBiome:BiomeId='countryside',lastArrived=false,snapshot:SceneSnapshot={moving:false,stopping:false,doorsOpen:false,progress:0,biome:'countryside',chunkIndex:0,arrived:false};
+let lastBiome:BiomeId='countryside',lastArrived=false,snapshot:SceneSnapshot={moving:false,stopping:false,doorsOpen:false,progress:0,biome:'countryside',chunkIndex:0,arrived:false,speed:0,acceleration:0};
 const paces=[{speed:135,name:'慢慢开',icon:'🐢'},{speed:200,name:'快一点',icon:'🐇'},{speed:90,name:'看看风景',icon:'🌿'}];
 const buttons=[...document.querySelectorAll<HTMLButtonElement>('[data-ready]')];buttons.forEach(b=>b.disabled=true);
 function say(text:string,icon='💬'):void {el('speech-text').textContent=text;el('speech-icon').textContent=icon;audio.speak(text);}
 function updateRibbon():void {el('route-ribbon').innerHTML=currentStops.map((id,i)=>`<span class="stop ${i===snapshot.chunkIndex?'active':''}" ${i===snapshot.chunkIndex?'aria-current="step"':''}><span>${biomes[id].icon}</span><span>${biomes[id].name}</span></span>${i<currentStops.length-1?'<i aria-hidden="true">···</i>':''}`).join('');}
 function onChange(state:SceneSnapshot):void {
-  const previous=snapshot;snapshot=state;
+  const previous=snapshot;snapshot=state;audio.setMotion(state.speed,state.acceleration);
   const moving=state.moving||state.stopping;
   el<HTMLButtonElement>('door').disabled=!ready||moving;
   el('door').setAttribute('aria-pressed',String(state.doorsOpen));el('door-label').textContent=state.doorsOpen?'关车门':'开车门';el('door-note').hidden=!state.doorsOpen;
@@ -57,7 +57,7 @@ let game:Phaser.Game;
 try {game=new Phaser.Game({type:Phaser.AUTO,parent:'game',backgroundColor:'#b9d7d5',scale:{mode:Phaser.Scale.RESIZE,width:el('game').clientWidth,height:el('game').clientHeight},render:{antialias:true,pixelArt:false,roundPixels:false},audio:{noAudio:true},scene:[scene],fps:{target:60,forceSetTimeOut:false}});}catch {el('loading-text').textContent='画面没有准备好，请换个浏览器或重新打开。';el('reload').hidden=false;}
 el('reload').addEventListener('click',()=>location.reload());
 el('horn').addEventListener('click',horn);
-el('go').addEventListener('click',()=>{const wasMoving=snapshot.moving;scene.toggleRunning();say(wasMoving?'慢慢停下来，看看窗外吧。':'车门关好，坐坐好，我们出发啦！',wasMoving?'🌿':'🚂');});
+el('go').addEventListener('click',()=>{const wasMoving=snapshot.moving;audio.enableEngine();scene.toggleRunning();say(wasMoving?'慢慢停下来，看看窗外吧。':'车门关好，坐坐好，我们出发啦！',wasMoving?'🌿':'🚂');});
 el('door').addEventListener('click',()=>{if(scene.toggleDoor()){const open=snapshot.doorsOpen;const isWork=selectedTrain==='maintenance'||selectedTrain==='freight';say(open?(isWork?'驾驶室的门打开啦，驾驶员上车。':'车门打开啦，上车后坐坐好。'):'车门关好啦，可以出发了！',open?'🚪':'👌');audio.tone(open?660:440,.15);}});
 el('again').addEventListener('click',()=>{scene.restart();say('再开一趟，看看熟悉的风景！','🚂');});
 el('speed').addEventListener('click',()=>{paceIndex=(paceIndex+1)%paces.length;const pace=paces[paceIndex];scene.setPace(pace.speed);el('speed-label').textContent=pace.name;el('speed').firstElementChild!.textContent=pace.icon;say(pace.name+'，坐稳啦！',pace.icon);});
@@ -88,7 +88,8 @@ document.querySelectorAll<HTMLButtonElement>('[data-biome]').forEach(b=>b.addEve
 el('undo').addEventListener('click',()=>{customStops.pop();drawBuilder();el('builder-status').textContent=customStops.length<2?'至少拼上两段风景，就能出发。':'';});
 el('shuffle').addEventListener('click',()=>{for(let i=customStops.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[customStops[i],customStops[j]]=[customStops[j],customStops[i]];}drawBuilder();});
 el('apply-route').addEventListener('click',()=>{if(customStops.length>=2){chooseRoute(customStops,'我的小旅程');dialog.close();}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){scene.stopImmediately();audio.stopSpeech();}});
-window.addEventListener('pagehide',()=>audio.stopSpeech());
+document.addEventListener('visibilitychange',()=>{if(document.hidden){scene.stopImmediately();audio.setMotion(0,0);audio.stopSpeech();}});
+window.addEventListener('pagehide',()=>{audio.setMotion(0,0);audio.stopSpeech();});
 if(import.meta.hot)import.meta.hot.dispose(()=>{game?.destroy(true);audio.destroy();});
 updateRibbon();
+
