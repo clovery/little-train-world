@@ -5,6 +5,7 @@ export interface CoachStyle {
   windowCount: number;
   roof: 'round' | 'flat' | 'low';
   stripe: 'belt' | 'cargo' | 'tram' | 'none';
+  textureCrop?: { x: number; y: number; width: number; height: number };
   bodyColor?: string;
   sideColor?: string;
   roofColor?: string;
@@ -18,7 +19,7 @@ export interface ConsistSpacing {
 }
 
 export const coachStyles: Record<TrainId, CoachStyle> = {
-  steam: { count: 3, windowCount: 4, roof: 'round', stripe: 'belt', bodyColor: '#f0ca47', sideColor: '#fff0b4', roofColor: '#496f80', stripeColor: '#9e382f', windowColor: '#ffe8a8' },
+  steam: { count: 3, windowCount: 4, roof: 'round', stripe: 'belt', textureCrop: { x: 0, y: 0, width: 780, height: 271 }, bodyColor: '#f0ca47', sideColor: '#fff0b4', roofColor: '#496f80', stripeColor: '#9e382f', windowColor: '#ffe8a8' },
   express: { count: 4, windowCount: 4, roof: 'low', stripe: 'belt', stripeColor: '#466d83' },
   freight: { count: 4, windowCount: 0, roof: 'flat', stripe: 'cargo', sideColor: '#a97a56', stripeColor: '#5d6f55' },
   metro: { count: 3, windowCount: 4, roof: 'low', stripe: 'belt', stripeColor: '#3d817b' },

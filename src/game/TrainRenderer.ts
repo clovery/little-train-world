@@ -7,6 +7,7 @@ import { wheelLayouts, type WheelSpec } from './wheelLayouts';
 
 interface CoachVisual {
   container: Phaser.GameObjects.Container;
+  sprite: Phaser.GameObjects.Image;
   body: Phaser.GameObjects.Graphics;
   wheels: Phaser.GameObjects.Graphics;
 }
@@ -119,10 +120,11 @@ export class TrainRenderer {
 
   private createCoach(index:number):CoachVisual {
     const container = this.scene.add.container(0, 0).setDepth(29 - index * .01);
+    const sprite = this.scene.add.image(0, 0, this.trainType).setOrigin(.5, 1).setVisible(false);
     const body = this.scene.add.graphics();
     const wheels = this.scene.add.graphics();
-    container.add([body, wheels]);
-    return { container, body, wheels };
+    container.add([sprite, body, wheels]);
+    return { container, sprite, body, wheels };
   }
 
   private makeTrain(id: TrainId):void {
@@ -203,6 +205,7 @@ export class TrainRenderer {
   private redrawCoaches():void {
     const spec = trains.find(train => train.id === this.trainType)!;
     const style = coachStyles[this.trainType];
+    const coachTexture = this.coachTexture();
     const color = this.hexColor(style.bodyColor ?? spec.color);
     const sideColor = this.hexColor(style.sideColor ?? spec.color);
     const stripeColor = this.hexColor(style.stripeColor ?? '#2f4f44');
@@ -219,6 +222,15 @@ export class TrainRenderer {
       coach.wheels.clear();
       const w = this.coachWidth;
       const h = this.coachHeight;
+      if (coachTexture) {
+        coach.sprite.setTexture(coachTexture).setDisplaySize(w, h).setVisible(true);
+        coach.body.setVisible(false);
+        coach.wheels.setVisible(false);
+        continue;
+      }
+      coach.sprite.setVisible(false);
+      coach.body.setVisible(true);
+      coach.wheels.setVisible(true);
       coach.body.fillStyle(0x1f342c, .28).fillRoundedRect(-w / 2 + 8, -h + 8, w - 16, h * .82, 13);
       if (style.roof === 'round') coach.body.fillStyle(roofColor, 1).fillRoundedRect(-w / 2, -h, w, h * .78, 16);
       else if (style.roof === 'low') coach.body.fillStyle(roofColor, 1).fillRoundedRect(-w / 2, -h * .86, w, h * .66, 10);
@@ -252,6 +264,18 @@ export class TrainRenderer {
     return Phaser.Display.Color.HexStringToColor(value).color;
   }
 
+  private coachTexture():string | undefined {
+    const crop = coachStyles[this.trainType].textureCrop;
+    if (!crop) return undefined;
+    const key = `coach-${this.trainType}`;
+    if (this.scene.textures.exists(key)) return key;
+    const source = this.scene.textures.get(this.trainType).getSourceImage() as HTMLImageElement;
+    const texture = this.scene.textures.createCanvas(key, crop.width, crop.height)!;
+    texture.context.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+    texture.refresh();
+    return key;
+  }
+
   private renderCoaches(state:TrainRenderState):void {
     const spacing = consistSpacing(this.trainWidth, this.coachWidth, state.scale);
     this.coaches.forEach((coach, index) => {
@@ -262,7 +286,7 @@ export class TrainRenderer {
       const y = (track.y - 11) * state.scale + state.suspension * (1 - index * .12) + railPulse;
       const brakeNod = Phaser.Math.Clamp(-state.acceleration * .00023 * (index + 1), -.018, .018);
       coach.container.setPosition(x, y).setRotation(track.angle + brakeNod);
-      this.drawCoachWheels(coach, state.wheelTravel - lag, state.scale, state.reduced);
+      if (!coach.sprite.visible) this.drawCoachWheels(coach, state.wheelTravel - lag, state.scale, state.reduced);
     });
   }
 

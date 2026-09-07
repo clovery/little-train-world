@@ -12,6 +12,7 @@ test('every train style has at least two matching coaches', () => {
 test('steam coaches match the passenger coach carried by the steam art', () => {
   const style = coachStyles.steam;
 
+  assert.deepEqual(style.textureCrop, { x: 0, y: 0, width: 780, height: 271 });
   assert.equal(style.bodyColor, '#f0ca47');
   assert.equal(style.sideColor, '#fff0b4');
   assert.equal(style.roofColor, '#496f80');
