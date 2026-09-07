@@ -21,10 +21,19 @@ body{
   min-width:320px;
   min-height:100dvh;
   margin:0;
+  overflow:hidden;
   background:
     radial-gradient(circle at 8% 0%,#fff8d8 0,transparent 24rem),
     radial-gradient(circle at 92% 10%,#dcefe5 0,transparent 30rem),
     linear-gradient(180deg,#f8f6ec 0,#eaf2e5 100%);
+}
+#app{
+  height:100dvh;
+  max-height:100dvh;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
 }
 button{font:inherit;cursor:pointer;touch-action:manipulation;border:0;color:inherit}
 button,a{-webkit-tap-highlight-color:transparent}
@@ -34,9 +43,10 @@ button:disabled{opacity:.46;cursor:default}
 [hidden]{display:none!important}
 
 .header{
-  width:min(1440px,100%);
+  width:min(1600px,100%);
   height:74px;
   margin:auto;
+  flex:none;
   padding:0 28px;
   display:flex;
   align-items:center;
@@ -83,11 +93,20 @@ button:disabled{opacity:.46;cursor:default}
 .round-button{width:44px;height:44px;border-radius:50%;font-size:18px;flex:none}
 
 .cockpit{
-  width:min(1400px,100%);
-  margin:auto;
-  padding:8px 22px 24px;
+  flex:1;
+  min-height:0;
+  width:min(1600px,100%);
+  margin:0 auto;
+  padding:8px 10px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:0;
 }
 .playground{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
   overflow:hidden;
   border:6px solid #fff;
   border-radius:32px;
@@ -96,8 +115,8 @@ button:disabled{opacity:.46;cursor:default}
 }
 .stage{
   position:relative;
-  height:clamp(520px,calc(100dvh - 250px),690px);
-  min-height:520px;
+  flex:1;
+  min-height:0;
   overflow:hidden;
   border-radius:25px 25px 0 0;
   background:#b9d7d5;
@@ -245,6 +264,7 @@ button:disabled{opacity:.46;cursor:default}
 .loading-icon{animation:ready 1.5s ease-in-out infinite}
 
 .route-ribbon{
+  flex:none;
   min-height:50px;
   padding:8px 16px;
   display:flex;
@@ -272,6 +292,7 @@ button:disabled{opacity:.46;cursor:default}
 .route-ribbon>i{color:#afbaa9;font-style:normal;letter-spacing:.15em}
 
 .controls{
+  flex:none;
   min-height:102px;
   padding:14px 28px 18px;
   display:grid;
@@ -324,7 +345,7 @@ button:disabled{opacity:.46;cursor:default}
 }
 .go>span:first-child{font-size:21px}
 .go.moving{background:linear-gradient(180deg,#6e996d,#507b59);box-shadow:0 6px 0 #315d43,0 12px 25px #315d4320}
-.parent-note{margin:13px 0 0;text-align:center;color:#738278;font-size:13px}
+.parent-note{flex:none;margin:10px 0 0;text-align:center;color:#738278;font-size:13px}
 
 dialog::backdrop{background:#1f342b8a;backdrop-filter:blur(5px)}
 .game-sheet{
@@ -433,8 +454,8 @@ dialog::backdrop{background:#1f342b8a;backdrop-filter:blur(5px)}
 @keyframes sheet-in{from{transform:translateY(35px);opacity:.7}}
 
 @media(max-width:900px){
-  .cockpit{padding:6px 14px 22px}
-  .stage{height:clamp(470px,calc(100dvh - 245px),620px);min-height:470px}
+  .cockpit{padding:6px 10px 10px}
+  .stage{min-height:0}
   .scene-top{grid-template-columns:1fr minmax(200px,300px) 1fr}
   .controls{padding-inline:18px;gap:15px}
   .control-cluster{gap:14px}
@@ -449,9 +470,9 @@ dialog::backdrop{background:#1f342b8a;backdrop-filter:blur(5px)}
   .brand small{font-size:8px}
   .day-button{width:43px;padding:0;justify-content:center}
   .day-button #day-label{display:none}
-  .cockpit{padding:4px 7px 16px}
+  .cockpit{padding:4px 4px 14px}
   .playground{border-width:4px;border-radius:24px}
-  .stage{height:54dvh;min-height:360px;max-height:500px;border-radius:19px 19px 0 0}
+  .stage{border-radius:19px 19px 0 0;min-height:0}
   .scene-top{
     top:11px;left:11px;right:11px;
     grid-template-columns:1fr 1fr;
@@ -502,10 +523,52 @@ dialog::backdrop{background:#1f342b8a;backdrop-filter:blur(5px)}
   .header-tools{gap:6px}
   .tool-button{min-height:40px}
   .sound-button,.day-button{width:40px}
-  .stage{min-height:345px}
+  .stage{min-height:0}
   .control-cluster{gap:3px}
   .control-icon{width:40px;height:40px}
   .go{min-width:128px;font-size:18px}
+}
+
+@media(max-height:640px){
+  .header{height:56px;padding:0 16px}
+  .brand{gap:8px;font-size:17px}
+  .brand-icon{width:38px;height:38px;border-radius:12px;font-size:23px}
+  .brand small{font-size:9px}
+  .tool-button{min-height:38px;padding:0 11px;border-radius:13px}
+  .round-button{width:38px;height:38px;font-size:16px}
+  .sound-button{width:38px}
+  .cockpit{padding:4px 8px 6px}
+  .parent-note{display:none}
+  .route-ribbon{min-height:42px;padding:5px 12px}
+  .controls{min-height:80px;padding:9px 20px 10px;gap:16px}
+  .control-icon{width:44px;height:44px;border-radius:14px;font-size:23px}
+  .speed .control-icon{width:38px;height:38px;font-size:19px}
+  .go{min-width:200px;min-height:56px;padding:9px 22px;border-radius:18px;font-size:20px}
+  .go>span:first-child{font-size:19px}
+  .scene-top{top:12px;left:12px;right:12px}
+  .stage-actions{bottom:12px}
+}
+
+@media(max-height:500px){
+  .header{height:48px;padding:0 12px}
+  .brand-icon{width:34px;height:34px;font-size:20px}
+  .brand span:last-child{font-size:15px}
+  .brand small{display:none}
+  .tool-button{min-height:34px;font-size:13px}
+  .round-button,.sound-button{width:34px;height:34px;font-size:15px}
+  .cockpit{padding:2px 6px 4px}
+  .parent-note{display:none}
+  .route-ribbon{min-height:36px;padding:3px 10px}
+  .controls{min-height:64px;padding:6px 14px 7px;gap:12px}
+  .control-icon{width:36px;height:36px;border-radius:12px;font-size:19px}
+  .control{gap:5px;font-size:12px}
+  .speed .control-icon{width:32px;height:32px;font-size:16px}
+  .go{min-width:176px;min-height:48px;padding:7px 16px;font-size:18px;border-radius:16px}
+  .scene-top{top:9px;left:9px;right:9px}
+  .hud-pill{min-height:32px;padding:6px 9px;font-size:11px}
+  .speech{top:78px;padding:7px 10px;font-size:13px}
+  .stage-actions{bottom:9px}
+  .stage-action{min-height:46px;padding:5px 8px}
 }
 
 @media(prefers-reduced-motion:reduce){
